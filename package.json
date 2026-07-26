@@ -1,0 +1,21 @@
+{
+  "name": "edge-learning-assistant",
+  "version": "0.1.0",
+  "description": "Chrome/Edge extension that captures the current page during online training and helps you understand it faster.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node esbuild.config.mjs && npm run copy-assets",
+    "watch": "node esbuild.config.mjs --watch",
+    "typecheck": "tsc --noEmit",
+    "copy-assets": "node scripts/copy-assets.mjs"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.278",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.6.3"
+  },
+  "dependencies": {
+    "@mozilla/readability": "^0.5.0"
+  }
+}

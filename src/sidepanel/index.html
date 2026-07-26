@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title data-i18n="sidepanelTitle">LearningShot</title>
+    <link rel="stylesheet" href="sidepanel.css" />
+  </head>
+  <body>
+    <header class="header">
+      <h1 data-i18n="appTitle">LearningShot 在线培训学习助手</h1>
+      <div class="header-actions">
+        <button id="langToggle" class="icon-btn" data-i18n-title="langToggleTitle" title="Switch to English">EN</button>
+        <button id="themeToggle" class="icon-btn" data-i18n-title="themeToggleTitle" title="切换深色/浅色主题">🌙</button>
+        <button id="openOptions" class="icon-btn" title="设置">⚙️</button>
+      </div>
+    </header>
+
+    <section class="controls">
+      <div class="mode-row">
+        <span class="mode-label" data-i18n="readingModeLabel">解读模式</span>
+        <div class="segmented" id="readingModeSegmented">
+          <button data-value="explain" class="segmented-btn active" data-i18n="modeExplain">普通解读</button>
+          <button data-value="quiz" class="segmented-btn" data-i18n="modeQuiz">题目解答</button>
+        </div>
+      </div>
+      <p class="hint" id="quizHint" data-i18n="quizHint" hidden>
+        ⚠️ 仅供自测/练习参考，请勿用于正式计分考试。
+      </p>
+
+      <div class="mode-row">
+        <span class="mode-label" data-i18n="selectionModeLabel">框选方式</span>
+        <div class="segmented" id="selectionModeSegmented">
+          <button data-value="selection-text" class="segmented-btn active" data-i18n="selectionText">文本选中</button>
+          <button data-value="selection-image" class="segmented-btn" data-i18n="selectionImage">区域截图</button>
+        </div>
+      </div>
+
+      <div class="action-row">
+        <button id="captureFullPage" class="primary-btn" data-i18n="captureFullPage">📄 抓取整页</button>
+        <button id="captureSelection" class="secondary-btn" data-i18n="captureSelection">✂️ 框选解读</button>
+      </div>
+      <p class="status" id="status"></p>
+    </section>
+
+    <section class="result-section">
+      <div class="result-toolbar">
+        <h2 data-i18n="resultTitle">解读结果</h2>
+        <button id="clearResult" class="text-btn" data-i18n="clearResult">清空</button>
+      </div>
+      <div id="result" class="result-box"></div>
+    </section>
+
+    <section class="history-section">
+      <div class="result-toolbar">
+        <h2 data-i18n="historyTitle">历史记录</h2>
+        <div class="history-toolbar-actions">
+          <button id="exportAllHistory" class="text-btn" data-i18n="exportAll">导出全部</button>
+          <button id="clearHistory" class="text-btn" data-i18n="clearHistoryAll">全部清空</button>
+        </div>
+      </div>
+      <ul id="historyList" class="history-list"></ul>
+    </section>
+
+    <script type="module" src="sidepanel.js"></script>
+  </body>
+</html>

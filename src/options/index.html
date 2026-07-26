@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title data-i18n="settingsPageTitle">LearningShot - 设置</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="title-row">
+        <h1 data-i18n="settingsTitle">设置</h1>
+        <div class="header-actions">
+          <button id="langToggle" class="icon-btn" data-i18n-title="langToggleTitle" title="Switch to English">EN</button>
+          <button id="themeToggle" class="icon-btn" data-i18n-title="themeToggleTitle" title="切换深色/浅色主题">🌙</button>
+        </div>
+      </div>
+
+      <label>
+        <span data-i18n="baseUrlLabel">网关地址 (Base URL)</span>
+        <input id="baseUrl" type="text" placeholder="https://llm-gateway.internal.company.com/v1" />
+      </label>
+
+      <label>
+        <span data-i18n="apiKeyLabel">API Key</span>
+        <input id="apiKey" type="password" data-i18n-placeholder="apiKeyPlaceholder" placeholder="仅保存在本地浏览器中" />
+      </label>
+
+      <label>
+        <span data-i18n="modelLabel">模型名称 (model)</span>
+        <input id="model" type="text" placeholder="例如：gpt-4o / qwen-vl-max" />
+      </label>
+
+      <label>
+        <span data-i18n="outputLanguageLabel">输出语言</span>
+        <input id="outputLanguage" type="text" placeholder="中文 / English / ..." />
+      </label>
+
+      <div class="button-row">
+        <button id="save" class="save-btn" data-i18n="save">保存</button>
+        <button id="testConnection" class="test-btn" data-i18n="testConnection">一键测试</button>
+      </div>
+      <p id="savedHint" class="saved-hint" data-i18n="saved" hidden>已保存</p>
+      <p id="testResult" class="test-result" hidden></p>
+
+      <hr />
+      <p class="note" data-i18n="note">
+        提示：以上信息仅保存在当前浏览器本地（chrome.storage），不会上传到除你配置的网关地址之外的任何第三方服务。
+      </p>
+    </div>
+    <script type="module" src="options.js"></script>
+  </body>
+</html>

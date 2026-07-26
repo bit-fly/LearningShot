@@ -1,0 +1,153 @@
+body {
+  margin: 0;
+  font-family: -apple-system, "Segoe UI", "Microsoft Yahei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+:root {
+  --primary: #4f7cff;
+  --bg: #f7f8fb;
+  --card: #ffffff;
+  --border: #e3e6ec;
+  --text: #1f2430;
+  --muted: #6b7280;
+  --success: #2e9e5b;
+  --danger: #d9463f;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --primary: #7b9bff;
+  --bg: #14161c;
+  --card: #1d212b;
+  --border: #2c313c;
+  --text: #e7e9ef;
+  --muted: #9aa1ad;
+  --success: #4bcd85;
+  --danger: #ff6b62;
+}
+
+.container {
+  max-width: 480px;
+  margin: 32px auto;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 24px;
+}
+
+.title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.icon-btn {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 3px 7px;
+  border-radius: 4px;
+}
+
+h1 {
+  font-size: 18px;
+  margin-top: 0;
+}
+
+label {
+  display: block;
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+
+input {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+  box-sizing: border-box;
+  background: var(--card);
+  color: var(--text);
+}
+
+.button-row {
+  display: flex;
+  gap: 10px;
+}
+
+.save-btn {
+  padding: 8px 18px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.test-btn {
+  padding: 8px 18px;
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.test-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.saved-hint {
+  display: inline-block;
+  margin-left: 10px;
+  color: var(--success);
+  font-size: 13px;
+}
+
+/* The .saved-hint class's `display: inline-block` would otherwise override
+   the browser's default `[hidden] { display: none }` UA rule (author
+   stylesheets win over UA styles at equal specificity), making the "已保存"
+   hint visible even while the `hidden` attribute is set. This rule restores
+   the expected hidden behavior. */
+.saved-hint[hidden] {
+  display: none;
+}
+
+.test-result {
+  margin: 8px 0 0;
+  font-size: 12.5px;
+}
+
+.test-result.ok {
+  color: var(--success);
+}
+
+.test-result.fail {
+  color: var(--danger);
+}
+
+.test-result[hidden] {
+  display: none;
+}
+
+.note {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.6;
+}

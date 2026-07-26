@@ -1,0 +1,7 @@
+node_modules/
+dist/
+*.log
+
+# Local-only proxy script (contains internal credentials / gateway URLs);
+# not part of the shipped extension, must never be committed to a public repo.
+cherry_proxy.py

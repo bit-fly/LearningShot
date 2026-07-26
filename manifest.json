@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "LearningShot",
+  "version": "0.1.0",
+  "description": "抓取当前网页/框选内容，用 AI 归纳解读，辅助在线培训学习；测试题可切换为自测参考答案模式。",
+  "action": {
+    "default_title": "打开学习助手侧边栏",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "options_page": "options.html",
+  "permissions": ["activeTab", "scripting", "storage", "sidePanel"],
+  "host_permissions": [],
+  "optional_host_permissions": ["<all_urls>"]
+}
