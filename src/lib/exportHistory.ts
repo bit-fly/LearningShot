@@ -3,6 +3,7 @@
 
 import { t } from "./i18n";
 import { CaptureMode, HistoryEntry, ReadingMode, UILanguage } from "./types";
+import { resolveHistoryTitle } from "./titleUtil";
 
 function captureModeLabel(mode: CaptureMode, lang: UILanguage): string {
   if (mode === "full-page") return t("modeFullPage", lang);
@@ -40,7 +41,7 @@ function extractTextParts(parts: { type: string; text?: string }[]): string {
 
 function entryToMarkdown(entry: HistoryEntry, lang: UILanguage): string {
   const date = new Date(entry.createdAt).toLocaleString();
-  const title = entry.sourceTitle || t("exportDefaultTitle", lang);
+  const title = resolveHistoryTitle(entry, entry.sourceTitle || t("exportDefaultTitle", lang));
   const followUpMd = conversationToMarkdown(entry, lang);
   return [
     `# ${title}`,
@@ -76,7 +77,10 @@ function timestampForFilename(): string {
 
 export function exportSingleEntry(entry: HistoryEntry, lang: UILanguage): void {
   const md = entryToMarkdown(entry, lang);
-  const safeTitle = (entry.sourceTitle || t("exportDefaultTitle", lang)).replace(/[\\/:*?"<>|]/g, "_").slice(0, 40);
+  const safeTitle = resolveHistoryTitle(entry, entry.sourceTitle || t("exportDefaultTitle", lang)).replace(
+    /[\\/:*?"<>|]/g,
+    "_"
+  ).slice(0, 40);
   downloadMarkdown(`${safeTitle}-${timestampForFilename()}.md`, md);
 }
 

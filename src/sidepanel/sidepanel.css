@@ -314,16 +314,22 @@ body {
 .history-item .item-toolbar {
   display: flex;
   justify-content: flex-end;
+  gap: 10px;
   margin-bottom: 2px;
 }
 
-.history-item .export-one-btn {
+.history-item .export-one-btn,
+.history-item .delete-one-btn {
   border: none;
   background: transparent;
   color: var(--primary);
   cursor: pointer;
   font-size: 11px;
   padding: 0;
+}
+
+.history-item .delete-one-btn {
+  color: #e0554c;
 }
 
 .history-item:hover {
@@ -343,4 +349,9 @@ body {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+}
+
+.history-item .preview.title {
+  font-weight: 600;
+  color: var(--text);
 }

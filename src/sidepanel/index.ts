@@ -1,4 +1,4 @@
-import { addHistoryEntry, getHistory, getSettings, clearHistory, updateHistoryEntry } from "../lib/storage";
+import { addHistoryEntry, deleteHistoryEntry, getHistory, getSettings, clearHistory, updateHistoryEntry } from "../lib/storage";
 import { buildSystemPrompt, buildUserPromptForText } from "../lib/prompts";
 import { streamChatCompletion } from "../lib/llmClient";
 import { cropScreenshot } from "../lib/imageCrop";
@@ -6,6 +6,7 @@ import { ensureHostAccess } from "../lib/permissions";
 import { applyStaticI18n, t } from "../lib/i18n";
 import { applyTheme, langToggleLabel, themeToggleIcon, toggleTheme, toggleUILanguage } from "../lib/uiPrefs";
 import { exportAllHistory, exportSingleEntry } from "../lib/exportHistory";
+import { generateHistoryTitle, resolveHistoryTitle } from "../lib/titleUtil";
 import { CaptureMode, ChatMessage, HistoryEntry, ReadingMode, RuntimeMessage, UILanguage } from "../lib/types";
 
 const readingModeSegmented = document.getElementById("readingModeSegmented")!;
@@ -294,6 +295,7 @@ async function runInterpretation(req: InterpretationRequest) {
           resultText: finalText,
           conversation,
         };
+        entry.title = generateHistoryTitle(entry);
         await addHistoryEntry(entry);
         renderHistory();
         // Enable the follow-up chat box for this freshly generated result.
@@ -459,18 +461,30 @@ async function renderHistory() {
     const li = document.createElement("li");
     li.className = "history-item";
     const date = new Date(entry.createdAt).toLocaleString();
+    const displayTitle = resolveHistoryTitle(entry, entry.sourceTitle || entry.inputPreview);
     li.innerHTML = `
       <div class="item-toolbar">
         <button class="export-one-btn" type="button" data-id="${entry.id}">${t("exportOne", uiLang)}</button>
+        <button class="delete-one-btn" type="button" data-id="${entry.id}">${t("deleteOne", uiLang)}</button>
       </div>
       <div class="meta">${date} · ${modeLabel(entry.mode)} · ${
       entry.readingMode === "quiz" ? t("modeQuiz", uiLang) : t("modeExplain", uiLang)
     }</div>
-      <div class="preview">${escapeHtml(entry.sourceTitle || entry.inputPreview)}</div>
+      <div class="preview title">${escapeHtml(displayTitle)}</div>
     `;
     li.querySelector(".export-one-btn")?.addEventListener("click", (e) => {
       e.stopPropagation();
       exportSingleEntry(entry, uiLang);
+    });
+    li.querySelector(".delete-one-btn")?.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      if (!confirm(t("deleteConfirm", uiLang))) return;
+      await deleteHistoryEntry(entry.id);
+      if (currentHistoryId === entry.id) {
+        resultEl.innerHTML = "";
+        resetChat();
+      }
+      renderHistory();
     });
     li.addEventListener("click", () => {
       resultEl.innerHTML = renderMarkdownLite(entry.resultText);

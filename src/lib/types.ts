@@ -66,6 +66,10 @@ export interface HistoryEntry {
   sourceUrl: string;
   inputPreview: string; // short preview of what was sent (text or "[截图]")
   resultText: string; // final assistant markdown-ish text (first answer only, for quick preview)
+  // Short auto-generated title summarizing the content, shown in the history
+  // list and used as the export file/heading. Optional for backward
+  // compatibility with entries saved before this field existed.
+  title?: string;
   // Full conversation so far (system + user + assistant, including any
   // follow-up chat turns). Optional for backward compatibility with entries
   // saved before the follow-up chat feature existed.

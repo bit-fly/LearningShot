@@ -26,6 +26,8 @@ const zh: Dict = {
   exportAll: "导出全部",
   clearHistoryAll: "全部清空",
   exportOne: "导出",
+  deleteOne: "删除",
+  deleteConfirm: "确认删除这条记录吗？",
   themeToggleTitle: "切换深色/浅色主题",
   langToggleTitle: "Switch to English",
 
@@ -99,6 +101,8 @@ const en: Dict = {
   exportAll: "Export all",
   clearHistoryAll: "Clear all",
   exportOne: "Export",
+  deleteOne: "Delete",
+  deleteConfirm: "Delete this record?",
   themeToggleTitle: "Toggle dark/light theme",
   langToggleTitle: "切换为中文",
 
