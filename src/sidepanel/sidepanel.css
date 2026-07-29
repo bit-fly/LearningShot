@@ -276,7 +276,8 @@ body {
 }
 
 .chat-input {
-  flex: 1;
+  flex: 1 1 auto;
+  min-width: 0;
   resize: vertical;
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -294,7 +295,11 @@ body {
 }
 
 .chat-input-row .primary-btn {
+  flex: 0 0 auto;
   white-space: nowrap;
+  padding: 6px 12px;
+  font-size: 12px;
+  align-self: stretch;
 }
 
 .history-list {
