@@ -48,6 +48,21 @@
         <button id="clearResult" class="text-btn" data-i18n="clearResult">清空</button>
       </div>
       <div id="result" class="result-box"></div>
+
+      <div id="chatSection" class="chat-section" hidden>
+        <h3 data-i18n="chatTitle">继续讨论</h3>
+        <div id="chatMessages" class="chat-messages"></div>
+        <div class="chat-input-row">
+          <textarea
+            id="chatInput"
+            class="chat-input"
+            rows="2"
+            data-i18n-placeholder="chatPlaceholder"
+            placeholder="针对以上解读结果继续提问…"
+          ></textarea>
+          <button id="chatSend" class="primary-btn" data-i18n="chatSend">发送</button>
+        </div>
+      </div>
     </section>
 
     <section class="history-section">

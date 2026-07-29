@@ -25,6 +25,19 @@ export type CaptureMode = "full-page" | "selection-text" | "selection-image";
 
 export type ReadingMode = "explain" | "quiz";
 
+// Chat message shape used both for LLM requests (llmClient.ts) and for
+// persisting a full multi-turn conversation on a HistoryEntry so follow-up
+// chat ("继续讨论") can resume after reopening the side panel or reloading
+// a history item.
+export type ChatContentPart =
+  | { type: "text"; text: string }
+  | { type: "image_url"; image_url: { url: string } };
+
+export interface ChatMessage {
+  role: "system" | "user" | "assistant";
+  content: string | ChatContentPart[];
+}
+
 export interface PageExtractResult {
   title: string;
   url: string;
@@ -52,7 +65,11 @@ export interface HistoryEntry {
   sourceTitle: string;
   sourceUrl: string;
   inputPreview: string; // short preview of what was sent (text or "[截图]")
-  resultText: string; // final assistant markdown-ish text
+  resultText: string; // final assistant markdown-ish text (first answer only, for quick preview)
+  // Full conversation so far (system + user + assistant, including any
+  // follow-up chat turns). Optional for backward compatibility with entries
+  // saved before the follow-up chat feature existed.
+  conversation?: ChatMessage[];
 }
 
 export const HISTORY_LIMIT = 200;

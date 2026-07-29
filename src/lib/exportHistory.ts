@@ -14,9 +14,34 @@ function readingModeLabel(mode: ReadingMode, lang: UILanguage): string {
   return mode === "quiz" ? t("modeQuiz", lang) : t("modeExplain", lang);
 }
 
+function conversationToMarkdown(entry: HistoryEntry, lang: UILanguage): string {
+  // conversation = [system, user(original capture), assistant, user(follow-up), assistant, ...]
+  // The first assistant reply duplicates entry.resultText (already shown above),
+  // so only render turns from the first follow-up question onward.
+  const conv = entry.conversation;
+  if (!conv || conv.length <= 3) return "";
+  const followUps = conv.slice(3);
+  if (followUps.length === 0) return "";
+  const lines = [`## ${t("chatTitle", lang)}`, ""];
+  for (const msg of followUps) {
+    const text = typeof msg.content === "string" ? msg.content : extractTextParts(msg.content);
+    const speaker = msg.role === "user" ? t("chatYou", lang) : t("chatAssistant", lang);
+    lines.push(`**${speaker}:** ${text}`, "");
+  }
+  return lines.join("\n");
+}
+
+function extractTextParts(parts: { type: string; text?: string }[]): string {
+  return parts
+    .filter((p) => p.type === "text")
+    .map((p) => p.text || "")
+    .join("\n");
+}
+
 function entryToMarkdown(entry: HistoryEntry, lang: UILanguage): string {
   const date = new Date(entry.createdAt).toLocaleString();
   const title = entry.sourceTitle || t("exportDefaultTitle", lang);
+  const followUpMd = conversationToMarkdown(entry, lang);
   return [
     `# ${title}`,
     "",
@@ -29,6 +54,7 @@ function entryToMarkdown(entry: HistoryEntry, lang: UILanguage): string {
     "",
     entry.resultText,
     "",
+    ...(followUpMd ? ["", followUpMd] : []),
   ].join("\n");
 }
 

@@ -42,6 +42,14 @@ const zh: Dict = {
   statusDone: "完成",
   statusError: "出错了：",
 
+  chatTitle: "继续讨论",
+  chatPlaceholder: "针对以上解读结果继续提问…",
+  chatSend: "发送",
+  chatThinking: "AI 正在回复…",
+  chatEmptyInput: "请先输入问题",
+  chatYou: "我",
+  chatAssistant: "AI",
+
   modeFullPage: "整页",
   modeSelectionText: "文本框选",
   modeSelectionImage: "截图框选",
@@ -106,6 +114,14 @@ const en: Dict = {
   statusGenerating: "AI is generating the explanation…",
   statusDone: "Done",
   statusError: "Error: ",
+
+  chatTitle: "Follow-up chat",
+  chatPlaceholder: "Ask a follow-up question about the explanation above…",
+  chatSend: "Send",
+  chatThinking: "AI is replying…",
+  chatEmptyInput: "Please enter a question first",
+  chatYou: "You",
+  chatAssistant: "AI",
 
   modeFullPage: "Full page",
   modeSelectionText: "Text selection",

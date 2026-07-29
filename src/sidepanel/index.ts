@@ -1,12 +1,12 @@
-import { addHistoryEntry, getHistory, getSettings, clearHistory } from "../lib/storage";
+import { addHistoryEntry, getHistory, getSettings, clearHistory, updateHistoryEntry } from "../lib/storage";
 import { buildSystemPrompt, buildUserPromptForText } from "../lib/prompts";
-import { ChatMessage, streamChatCompletion } from "../lib/llmClient";
+import { streamChatCompletion } from "../lib/llmClient";
 import { cropScreenshot } from "../lib/imageCrop";
 import { ensureHostAccess } from "../lib/permissions";
 import { applyStaticI18n, t } from "../lib/i18n";
 import { applyTheme, langToggleLabel, themeToggleIcon, toggleTheme, toggleUILanguage } from "../lib/uiPrefs";
 import { exportAllHistory, exportSingleEntry } from "../lib/exportHistory";
-import { CaptureMode, HistoryEntry, ReadingMode, RuntimeMessage, UILanguage } from "../lib/types";
+import { CaptureMode, ChatMessage, HistoryEntry, ReadingMode, RuntimeMessage, UILanguage } from "../lib/types";
 
 const readingModeSegmented = document.getElementById("readingModeSegmented")!;
 const selectionModeSegmented = document.getElementById("selectionModeSegmented")!;
@@ -22,12 +22,22 @@ const historyListEl = document.getElementById("historyList")!;
 const openOptionsBtn = document.getElementById("openOptions")!;
 const langToggleBtn = document.getElementById("langToggle") as HTMLButtonElement;
 const themeToggleBtn = document.getElementById("themeToggle") as HTMLButtonElement;
+const chatSectionEl = document.getElementById("chatSection")!;
+const chatMessagesEl = document.getElementById("chatMessages")!;
+const chatInputEl = document.getElementById("chatInput") as HTMLTextAreaElement;
+const chatSendBtn = document.getElementById("chatSend") as HTMLButtonElement;
 
 let readingMode: ReadingMode = "explain";
 let selectionMode: "selection-text" | "selection-image" = "selection-text";
 let busy = false;
+let chatBusy = false;
 let awaitingRect: { readingMode: ReadingMode } | null = null;
 let uiLang: UILanguage = "zh";
+// Full running conversation (system + user + assistant + any follow-up turns)
+// for whichever result is currently shown, so the chat box below can send
+// follow-up questions with full context. Mirrors HistoryEntry.conversation.
+let currentConversation: ChatMessage[] | null = null;
+let currentHistoryId: string | null = null;
 
 openOptionsBtn.addEventListener("click", () => chrome.runtime.openOptionsPage());
 
@@ -78,7 +88,20 @@ selectionModeSegmented.addEventListener("click", (e) => {
 
 clearResultBtn.addEventListener("click", () => {
   resultEl.innerHTML = "";
+  resetChat();
 });
+
+function resetChat() {
+  currentConversation = null;
+  currentHistoryId = null;
+  chatMessagesEl.innerHTML = "";
+  chatInputEl.value = "";
+  chatSectionEl.hidden = true;
+}
+
+function showChat() {
+  chatSectionEl.hidden = false;
+}
 
 clearHistoryBtn.addEventListener("click", async () => {
   await clearHistory();
@@ -119,6 +142,7 @@ captureFullPageBtn.addEventListener("click", async () => {
   // click the other capture button while permission prompts / injection are
   // still in flight (which was confusing during the "区域截图" flow).
   setBusy(true, t("statusPreparingFullPage", uiLang));
+  resetChat();
   try {
     const tab = await getActiveTab();
     await ensureHostAccess();
@@ -148,6 +172,7 @@ captureSelectionBtn.addEventListener("click", async () => {
   if (busy) return;
   // Disable both buttons immediately (see comment in captureFullPageBtn above).
   setBusy(true, t("statusPreparingSelection", uiLang));
+  resetChat();
   try {
     const tab = await getActiveTab();
     await ensureHostAccess();
@@ -257,6 +282,7 @@ async function runInterpretation(req: InterpretationRequest) {
       },
       onDone: async (finalText) => {
         setBusy(false, t("statusDone", uiLang));
+        const conversation: ChatMessage[] = [...messages, { role: "assistant", content: finalText }];
         const entry: HistoryEntry = {
           id: crypto.randomUUID(),
           createdAt: Date.now(),
@@ -266,9 +292,15 @@ async function runInterpretation(req: InterpretationRequest) {
           sourceUrl: req.sourceUrl,
           inputPreview: req.inputPreview,
           resultText: finalText,
+          conversation,
         };
         await addHistoryEntry(entry);
         renderHistory();
+        // Enable the follow-up chat box for this freshly generated result.
+        currentConversation = conversation;
+        currentHistoryId = entry.id;
+        chatMessagesEl.innerHTML = "";
+        showChat();
       },
       onError: (err) => {
         setBusy(false, `${t("statusError", uiLang)}${err.message}`);
@@ -317,6 +349,103 @@ function renderMarkdownLite(text: string): string {
   return html;
 }
 
+// ---------- Follow-up chat ----------
+
+function appendChatBubble(role: "user" | "assistant", text: string): HTMLElement {
+  const bubble = document.createElement("div");
+  bubble.className = `chat-bubble chat-${role}`;
+  const roleLabel = document.createElement("span");
+  roleLabel.className = "chat-role";
+  roleLabel.textContent = role === "user" ? t("chatYou", uiLang) : t("chatAssistant", uiLang);
+  const body = document.createElement("span");
+  body.className = "chat-body";
+  body.textContent = text;
+  bubble.appendChild(roleLabel);
+  bubble.appendChild(body);
+  chatMessagesEl.appendChild(bubble);
+  chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+  return bubble;
+}
+
+function setChatBusy(value: boolean) {
+  chatBusy = value;
+  chatSendBtn.disabled = value;
+  chatInputEl.disabled = value;
+}
+
+async function sendChatFollowUp() {
+  if (chatBusy || !currentConversation) return;
+  const question = chatInputEl.value.trim();
+  if (!question) {
+    statusEl.textContent = t("chatEmptyInput", uiLang);
+    return;
+  }
+
+  const settings = await getSettings();
+  currentConversation.push({ role: "user", content: question });
+  chatInputEl.value = "";
+  appendChatBubble("user", question);
+  const assistantBubble = appendChatBubble("assistant", "");
+  const assistantBody = assistantBubble.querySelector(".chat-body") as HTMLElement;
+  setChatBusy(true);
+  statusEl.textContent = t("chatThinking", uiLang);
+
+  let fullText = "";
+  await streamChatCompletion(
+    settings,
+    currentConversation,
+    {
+      onToken: (delta) => {
+        fullText += delta;
+        assistantBody.textContent = fullText;
+        chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+      },
+      onDone: async (finalText) => {
+        currentConversation!.push({ role: "assistant", content: finalText });
+        setChatBusy(false);
+        statusEl.textContent = t("statusDone", uiLang);
+        if (currentHistoryId) {
+          await updateHistoryEntry(currentHistoryId, { conversation: currentConversation! });
+        }
+      },
+      onError: (err) => {
+        // Roll back the just-added user turn so retrying doesn't duplicate it.
+        currentConversation!.pop();
+        setChatBusy(false);
+        assistantBody.textContent = `${t("statusError", uiLang)}${err.message}`;
+      },
+    }
+  );
+}
+
+chatSendBtn.addEventListener("click", () => void sendChatFollowUp());
+chatInputEl.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    void sendChatFollowUp();
+  }
+});
+
+function renderConversationThread(conversation: ChatMessage[]) {
+  chatMessagesEl.innerHTML = "";
+  // Skip index 0 (system prompt) and index 1 (original user capture, already
+  // shown as the main result / triggering input) — only show turns from the
+  // first assistant reply onward as the visible chat thread.
+  for (let i = 1; i < conversation.length; i++) {
+    const msg = conversation[i];
+    if (i === 1 && msg.role === "user") continue;
+    const text = typeof msg.content === "string" ? msg.content : extractTextParts(msg.content);
+    appendChatBubble(msg.role === "user" ? "user" : "assistant", text);
+  }
+}
+
+function extractTextParts(parts: { type: string; text?: string }[]): string {
+  return parts
+    .filter((p) => p.type === "text")
+    .map((p) => p.text || "")
+    .join("\n");
+}
+
 function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
@@ -345,6 +474,17 @@ async function renderHistory() {
     });
     li.addEventListener("click", () => {
       resultEl.innerHTML = renderMarkdownLite(entry.resultText);
+      // Restore this entry's conversation (if any) so the user can continue
+      // discussing a past result. Entries saved before this feature existed
+      // won't have `conversation` — just hide the chat box for those.
+      if (entry.conversation && entry.conversation.length > 0) {
+        currentConversation = entry.conversation;
+        currentHistoryId = entry.id;
+        renderConversationThread(entry.conversation);
+        showChat();
+      } else {
+        resetChat();
+      }
     });
     historyListEl.appendChild(li);
   }

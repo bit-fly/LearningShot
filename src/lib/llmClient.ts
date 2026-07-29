@@ -2,16 +2,7 @@
 // Works against any gateway that implements POST {baseUrl}/chat/completions
 // in the same shape as OpenAI's API (including vision "image_url" content parts).
 
-import { Settings } from "./types";
-
-export type ChatContentPart =
-  | { type: "text"; text: string }
-  | { type: "image_url"; image_url: { url: string } };
-
-export interface ChatMessage {
-  role: "system" | "user" | "assistant";
-  content: string | ChatContentPart[];
-}
+import { ChatMessage, Settings } from "./types";
 
 export interface StreamCallbacks {
   onToken: (delta: string) => void;

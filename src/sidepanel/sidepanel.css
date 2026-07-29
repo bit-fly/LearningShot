@@ -213,6 +213,90 @@ body {
   padding-left: 18px;
 }
 
+.chat-section {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.chat-section[hidden] {
+  display: none;
+}
+
+.chat-section h3 {
+  font-size: 13px;
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.chat-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.chat-bubble {
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  word-break: break-word;
+  white-space: pre-wrap;
+  max-width: 92%;
+}
+
+.chat-bubble.chat-user {
+  align-self: flex-end;
+  background: var(--primary);
+  color: #fff;
+}
+
+.chat-bubble.chat-assistant {
+  align-self: flex-start;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.chat-bubble .chat-role {
+  display: block;
+  font-size: 10.5px;
+  opacity: 0.75;
+  margin-bottom: 2px;
+}
+
+.chat-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.chat-input {
+  flex: 1;
+  resize: vertical;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--text);
+  font-size: 12.5px;
+  font-family: inherit;
+  padding: 6px 8px;
+  min-height: 36px;
+}
+
+.chat-input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.chat-input-row .primary-btn {
+  white-space: nowrap;
+}
+
 .history-list {
   list-style: none;
   margin: 0;

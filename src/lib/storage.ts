@@ -36,3 +36,14 @@ export async function deleteHistoryEntry(id: string): Promise<void> {
   const history = await getHistory();
   await chrome.storage.local.set({ [HISTORY_KEY]: history.filter((h) => h.id !== id) });
 }
+
+// Patches an existing entry in place (used to persist follow-up chat turns
+// appended after the initial capture/interpretation). No-ops if the id is
+// no longer present (e.g. entry aged out past HISTORY_LIMIT).
+export async function updateHistoryEntry(id: string, patch: Partial<HistoryEntry>): Promise<void> {
+  const history = await getHistory();
+  const idx = history.findIndex((h) => h.id === id);
+  if (idx === -1) return;
+  history[idx] = { ...history[idx], ...patch };
+  await chrome.storage.local.set({ [HISTORY_KEY]: history });
+}
