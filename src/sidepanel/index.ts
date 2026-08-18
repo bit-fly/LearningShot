@@ -457,7 +457,7 @@ async function runInterpretation(req: InterpretationRequest) {
       },
       onError: (err) => {
         setBusy(false, `${t("statusError", uiLang)}${err.message}`);
-        setPanelState("error", t("errorDescription", uiLang));
+        setPanelState("error", err.message);
       },
     }
   );
