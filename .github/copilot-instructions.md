@@ -129,3 +129,49 @@ This is the most non-obvious flow — it spans 3 files:
 - `cherry_proxy.py` at the repo root is the user's **local, external** FastAPI
   proxy to the real internal LLM gateway — it is not part of the shipped
   extension and must not be modified as part of extension changes.
+
+# Browser Extension UI Instructions
+
+This repository contains a Chrome/Edge browser extension featuring a side panel UI.
+
+## 🏗️ Architecture & Core Guidelines
+
+- **Manifest**: Do not modify `manifest.json` unless explicitly requested.
+- **Service Worker**: Preserve existing background service worker lifecycle and behavior.
+- **Content Scripts**: Preserve existing content script behavior and injection scope.
+- **Messaging**: Use the existing message-passing protocol for background/sidebar communication.
+- **Separation of Concerns**: Do not move business logic into the UI layer.
+- **Directory Structure**: Keep sidebar-specific code within `src/sidebar` whenever possible.
+
+## 🎨 UI & Layout Requirements
+
+- **Viewport Constraints**: Optimize layouts specifically for narrow side panel widths between **320px and 420px**.
+- **Scrolling**: Prevent horizontal overflow/scrolling under all standard widths.
+- **UI States**: Explicitly handle and support:
+  - `loading` (spinners/skeletons)
+  - `empty` (placeholder/empty states)
+  - `error` (user-friendly error feedback)
+  - `success` (confirmation/completed states)
+- **Accessibility & Semantics**: Use semantic HTML elements and proper accessible labels (`aria-*`).
+- **Design System**: Reuse existing components, utility classes, and design tokens (colors, spacing, typography).
+- **Dependencies**: Do not introduce new UI frameworks or external styling libraries without prior approval.
+
+## 📋 Pre-Edit Checklist
+
+Before making any modifications:
+1. Inspect repository structure and dependencies.
+2. Identify the sidebar entry point and mounting logic.
+3. Identify existing CSS/styling patterns, shared components, and state management conventions.
+4. Provide a clear plan before modifying files.
+
+## ✅ Post-Edit Workflow
+
+After making modifications:
+1. Run existing verification commands:
+   - Type check: `typecheck` / `tsc`
+   - Linting: `lint`
+   - Tests: `test`
+   - Build: `build`
+2. Provide a summary of:
+   - Modified, added, or deleted files.
+   - Any known limitations, edge cases, or follow-up recommendations.
