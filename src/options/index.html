@@ -6,49 +6,77 @@
     <link rel="stylesheet" href="options.css" />
   </head>
   <body>
-    <div class="container">
-      <div class="title-row">
-        <h1 data-i18n="settingsTitle">设置</h1>
+    <div class="options-shell">
+      <header class="header">
+        <button id="backToPanel" class="back-btn" type="button" data-i18n-title="backToPanelTitle" title="返回侧边栏" aria-label="返回侧边栏">‹</button>
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 32 32" focusable="false">
+              <rect x="1" y="1" width="30" height="30" rx="9" fill="currentColor" />
+              <path d="M10 11h12M10 16h8M10 21h5" stroke="#fff" stroke-width="2" stroke-linecap="round" />
+              <circle cx="22" cy="21" r="3" fill="#fff" />
+              <path d="M22 19.5v3M20.5 21h3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+            </svg>
+          </span>
+          <div class="brand-copy">
+            <h1 data-i18n="appTitle">LearningShot</h1>
+            <span data-i18n="settingsSubtitle">设置</span>
+          </div>
+        </div>
         <div class="header-actions">
           <button id="langToggle" class="icon-btn" data-i18n-title="langToggleTitle" title="Switch to English">EN</button>
           <button id="themeToggle" class="icon-btn" data-i18n-title="themeToggleTitle" title="切换深色/浅色主题">🌙</button>
         </div>
-      </div>
+      </header>
 
-      <label>
-        <span data-i18n="baseUrlLabel">网关地址 (Base URL)</span>
-        <input id="baseUrl" type="text" placeholder="https://llm-gateway.internal.company.com/v1" />
-      </label>
+      <main class="settings-content">
+        <label>
+          <span data-i18n="baseUrlLabel">网关地址</span>
+          <input id="baseUrl" type="text" placeholder="https://llm-gateway.internal.company.com/v1" />
+        </label>
 
-      <label>
-        <span data-i18n="apiKeyLabel">API Key</span>
-        <input id="apiKey" type="password" data-i18n-placeholder="apiKeyPlaceholder" placeholder="仅保存在本地浏览器中" />
-      </label>
+        <label>
+          <span data-i18n="apiKeyLabel">API 密钥</span>
+          <input id="apiKey" type="password" data-i18n-placeholder="apiKeyPlaceholder" placeholder="仅保存在本地浏览器中" />
+        </label>
 
-      <label>
-        <span data-i18n="modelLabel">模型名称 (model)</span>
-        <input id="model" type="text" placeholder="例如：gpt-4o / qwen-vl-max" />
-      </label>
-      <p class="hint" data-i18n="modelVisionHint">
-        ⚠️ 若需使用「区域截图」解读功能，请填写具有 Vision（视觉/图像识别）能力的模型，否则截图内容将无法被识别。
-      </p>
+        <label>
+          <span data-i18n="modelLabel">模型名称</span>
+          <input id="model" type="text" placeholder="例如：gpt-4o / qwen-vl-max" />
+        </label>
+        <p class="hint" data-i18n="modelVisionHint">
+          ⚠️ 若需使用「区域截图」解读功能，请填写具有 Vision（视觉/图像识别）能力的模型，否则截图内容将无法被识别。
+        </p>
 
-      <label>
-        <span data-i18n="outputLanguageLabel">输出语言</span>
-        <input id="outputLanguage" type="text" placeholder="中文 / English / ..." />
-      </label>
+        <label>
+          <span data-i18n="outputLanguageLabel">输出语言</span>
+          <input id="outputLanguage" type="text" placeholder="中文 / English / ..." />
+        </label>
 
-      <div class="button-row">
-        <button id="save" class="save-btn" data-i18n="save">保存</button>
-        <button id="testConnection" class="test-btn" data-i18n="testConnection">一键测试</button>
-      </div>
-      <p id="savedHint" class="saved-hint" data-i18n="saved" hidden>已保存</p>
-      <p id="testResult" class="test-result" hidden></p>
+        <div class="setting-toggle-row">
+          <span id="showQuizAssistantLabel" data-i18n="showQuizAssistantLabel">在主界面显示答题助手</span>
+          <label class="switch">
+            <input id="showQuizAssistant" type="checkbox" aria-labelledby="showQuizAssistantLabel" />
+            <span class="switch-track" aria-hidden="true"></span>
+          </label>
+        </div>
 
-      <hr />
-      <p class="note" data-i18n="note">
-        提示：以上信息仅保存在当前浏览器本地（chrome.storage），不会上传到除你配置的网关地址之外的任何第三方服务。
-      </p>
+        <div class="button-row">
+          <button id="save" class="save-btn" type="button" data-i18n="save">保存</button>
+          <button id="testConnection" class="test-btn" type="button" data-i18n="testConnection">测试连接</button>
+        </div>
+        <p id="savedHint" class="saved-hint" data-i18n="saved" hidden>已保存</p>
+        <p id="testResult" class="test-result" hidden></p>
+
+        <p class="note" data-i18n="note">
+          以上内容仅保存在本地浏览器（chrome.storage）中。
+        </p>
+      </main>
+
+      <footer class="settings-footer">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span data-i18n="settingsSubtitle">设置</span>
+      </footer>
     </div>
     <script type="module" src="options.js"></script>
   </body>

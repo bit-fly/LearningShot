@@ -10,16 +10,33 @@ import { generateHistoryTitle, resolveHistoryTitle } from "../lib/titleUtil";
 import { CaptureMode, ChatMessage, HistoryEntry, ReadingMode, RuntimeMessage, UILanguage } from "../lib/types";
 
 const readingModeSegmented = document.getElementById("readingModeSegmented")!;
+const quizModeBtn = document.getElementById("quizModeButton") as HTMLButtonElement;
 const selectionModeSegmented = document.getElementById("selectionModeSegmented")!;
 const quizHint = document.getElementById("quizHint")!;
+const captureScopeEl = document.getElementById("captureScope")!;
+const captureScopeFullPageInput = document.getElementById("captureScopeFullPage") as HTMLInputElement;
+const captureScopeSelectionInput = document.getElementById("captureScopeSelection") as HTMLInputElement;
 const captureFullPageBtn = document.getElementById("captureFullPage") as HTMLButtonElement;
 const captureSelectionBtn = document.getElementById("captureSelection") as HTMLButtonElement;
+const captureFullPageLabelEl = document.getElementById("captureFullPageLabel")!;
+const captureSelectionLabelEl = document.getElementById("captureSelectionLabel")!;
+const resultSectionEl = document.getElementById("resultSection")!;
+const resultToolbarEl = document.getElementById("resultToolbar")!;
+const emptyStateEl = document.getElementById("emptyState")!;
+const loadingStateEl = document.getElementById("loadingState")!;
+const processingStateEl = document.getElementById("processingState")!;
+const errorStateEl = document.getElementById("errorState")!;
+const errorDetailEl = document.getElementById("errorDetail")!;
+const retryCaptureBtn = document.getElementById("retryCapture") as HTMLButtonElement;
 const statusEl = document.getElementById("status")!;
+const statusDotEl = document.getElementById("statusDot")!;
+const siteOriginEl = document.getElementById("siteOrigin")!;
 const resultEl = document.getElementById("result")!;
 const clearResultBtn = document.getElementById("clearResult")!;
 const clearHistoryBtn = document.getElementById("clearHistory")!;
 const exportAllHistoryBtn = document.getElementById("exportAllHistory")!;
 const historyListEl = document.getElementById("historyList")!;
+const historySectionEl = document.getElementById("historySection")!;
 const openOptionsBtn = document.getElementById("openOptions")!;
 const langToggleBtn = document.getElementById("langToggle") as HTMLButtonElement;
 const themeToggleBtn = document.getElementById("themeToggle") as HTMLButtonElement;
@@ -30,8 +47,11 @@ const chatSendBtn = document.getElementById("chatSend") as HTMLButtonElement;
 
 let readingMode: ReadingMode = "explain";
 let selectionMode: "selection-text" | "selection-image" = "selection-text";
+let captureScope: "full-page" | "selection" = "full-page";
 let busy = false;
 let chatBusy = false;
+let panelState: "recognized" | "processing" | "loading" | "result" | "empty" | "error" = "empty";
+let hasCurrentResult = false;
 let awaitingRect: { readingMode: ReadingMode } | null = null;
 let uiLang: UILanguage = "zh";
 // Full running conversation (system + user + assistant + any follow-up turns)
@@ -49,12 +69,26 @@ async function initUIPrefs() {
   langToggleBtn.textContent = langToggleLabel(uiLang);
   applyTheme(settings.theme);
   themeToggleBtn.textContent = themeToggleIcon(settings.theme);
+  setQuizAssistantVisibility(settings.showQuizAssistant);
+  updateCaptureControls();
+}
+
+function setQuizAssistantVisibility(visible: boolean) {
+  quizModeBtn.hidden = !visible;
+  quizModeBtn.setAttribute("aria-hidden", String(!visible));
+  if (!visible && readingMode === "quiz") {
+    readingMode = "explain";
+    setSegmented(readingModeSegmented, readingMode);
+    quizHint.hidden = true;
+  }
 }
 
 langToggleBtn.addEventListener("click", async () => {
   uiLang = await toggleUILanguage();
   applyStaticI18n(uiLang);
   langToggleBtn.textContent = langToggleLabel(uiLang);
+  updateCaptureControls();
+  updateStatusLabel();
   await renderHistory();
 });
 
@@ -66,10 +100,81 @@ themeToggleBtn.addEventListener("click", async () => {
 
 void initUIPrefs();
 
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName !== "local" || !changes.settings) return;
+  void getSettings()
+    .then((settings) => setQuizAssistantVisibility(settings.showQuizAssistant))
+    .catch((err: unknown) => console.error("无法同步答题助手显示设置", err));
+});
+
 function setSegmented(container: HTMLElement, value: string) {
   container.querySelectorAll<HTMLButtonElement>(".segmented-btn").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.value === value);
   });
+}
+
+function updateCaptureControls() {
+  const isImageSelection = selectionMode === "selection-image";
+  const showFullPage = !isImageSelection && captureScope === "full-page";
+
+  captureScopeEl.hidden = isImageSelection;
+  captureFullPageBtn.hidden = !showFullPage;
+  captureSelectionBtn.hidden = showFullPage;
+  captureScopeFullPageInput.checked = captureScope === "full-page";
+  captureScopeSelectionInput.checked = captureScope === "selection";
+  captureFullPageLabelEl.textContent = t("captureText", uiLang);
+  captureSelectionLabelEl.textContent = isImageSelection
+    ? t("captureImage", uiLang)
+    : t("captureText", uiLang);
+}
+
+function setPanelState(
+  state: "recognized" | "processing" | "loading" | "result" | "empty" | "error",
+  detail = ""
+) {
+  panelState = state;
+  document.body.dataset.panelState = state;
+
+  resultSectionEl.hidden = state === "recognized";
+  resultToolbarEl.hidden = state !== "result";
+  resultEl.hidden = state !== "result";
+  emptyStateEl.hidden = state !== "empty";
+  loadingStateEl.hidden = state !== "loading";
+  processingStateEl.hidden = state !== "processing";
+  errorStateEl.hidden = state !== "error";
+
+  if (state !== "result") {
+    chatSectionEl.hidden = true;
+  }
+  if (detail) {
+    errorDetailEl.textContent = detail;
+  }
+
+  statusDotEl.className = `status-dot status-${state}`;
+  updateStatusLabel();
+}
+
+function updateStatusLabel() {
+  if (busy) return;
+  const statusKey =
+    panelState === "recognized"
+      ? "statusRecognized"
+      : panelState === "processing"
+        ? "statusProcessing"
+        : panelState === "loading"
+          ? "statusProcessing"
+          : panelState === "result"
+            ? "statusDone"
+            : panelState === "error"
+              ? "statusErrorState"
+              : "statusReady";
+  statusEl.textContent = t(statusKey, uiLang);
+}
+
+async function showIdleState() {
+  const history = await getHistory();
+  setPanelState(history.length > 0 ? "recognized" : "empty");
+  await renderHistory();
 }
 
 readingModeSegmented.addEventListener("click", (e) => {
@@ -85,11 +190,21 @@ selectionModeSegmented.addEventListener("click", (e) => {
   if (!btn) return;
   selectionMode = btn.dataset.value as "selection-text" | "selection-image";
   setSegmented(selectionModeSegmented, selectionMode);
+  updateCaptureControls();
+});
+
+captureScopeEl.addEventListener("change", (e) => {
+  const input = (e.target as HTMLInputElement).closest<HTMLInputElement>("input[name='captureScope']");
+  if (!input) return;
+  captureScope = input.value as "full-page" | "selection";
+  updateCaptureControls();
 });
 
 clearResultBtn.addEventListener("click", () => {
   resultEl.innerHTML = "";
   resetChat();
+  hasCurrentResult = false;
+  void showIdleState();
 });
 
 function resetChat() {
@@ -106,7 +221,7 @@ function showChat() {
 
 clearHistoryBtn.addEventListener("click", async () => {
   await clearHistory();
-  renderHistory();
+  await renderHistory();
 });
 
 exportAllHistoryBtn.addEventListener("click", async () => {
@@ -118,10 +233,28 @@ exportAllHistoryBtn.addEventListener("click", async () => {
   exportAllHistory(history, uiLang);
 });
 
+retryCaptureBtn.addEventListener("click", () => {
+  if (selectionMode === "selection-image" || captureScope === "selection") {
+    void captureSelection();
+  } else {
+    void captureFullPage();
+  }
+});
+
 async function getActiveTab(): Promise<chrome.tabs.Tab> {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab || tab.id === undefined) throw new Error("找不到当前活动标签页");
   return tab;
+}
+
+async function renderActiveSite() {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab?.url) return;
+  try {
+    siteOriginEl.textContent = new URL(tab.url).hostname;
+  } catch {
+    siteOriginEl.textContent = "";
+  }
 }
 
 async function ensureContentScript(tabId: number): Promise<void> {
@@ -132,16 +265,17 @@ function setBusy(value: boolean, message = "") {
   busy = value;
   captureFullPageBtn.disabled = value;
   captureSelectionBtn.disabled = value;
-  statusEl.textContent = message;
+  if (message) statusEl.textContent = message;
 }
 
 // ---------- Full page capture ----------
 
-captureFullPageBtn.addEventListener("click", async () => {
+async function captureFullPage() {
   if (busy) return;
   // Disable both buttons immediately, before any awaits, so the user can't
   // click the other capture button while permission prompts / injection are
   // still in flight (which was confusing during the "区域截图" flow).
+  setPanelState("processing");
   setBusy(true, t("statusPreparingFullPage", uiLang));
   resetChat();
   try {
@@ -152,6 +286,7 @@ captureFullPageBtn.addEventListener("click", async () => {
     const page = await chrome.tabs.sendMessage(tab.id!, { type: "EXTRACT_FULL_PAGE" } as RuntimeMessage);
     if (!page?.textContent) {
       setBusy(false, t("statusNoTextContent", uiLang));
+      await showIdleState();
       return;
     }
     await runInterpretation({
@@ -164,14 +299,18 @@ captureFullPageBtn.addEventListener("click", async () => {
     });
   } catch (err) {
     setBusy(false, errorMessage(err));
+    setPanelState("error", t("errorDescription", uiLang));
   }
-});
+}
+
+captureFullPageBtn.addEventListener("click", () => void captureFullPage());
 
 // ---------- Selection capture ----------
 
-captureSelectionBtn.addEventListener("click", async () => {
+async function captureSelection() {
   if (busy) return;
   // Disable both buttons immediately (see comment in captureFullPageBtn above).
+  setPanelState("processing");
   setBusy(true, t("statusPreparingSelection", uiLang));
   resetChat();
   try {
@@ -187,6 +326,7 @@ captureSelectionBtn.addEventListener("click", async () => {
       } as RuntimeMessage);
       if (!sel?.text) {
         setBusy(false, t("statusNoTextSelected", uiLang));
+        await showIdleState();
         return;
       }
       await runInterpretation({
@@ -205,14 +345,18 @@ captureSelectionBtn.addEventListener("click", async () => {
     }
   } catch (err) {
     setBusy(false, errorMessage(err));
+    setPanelState("error", t("errorDescription", uiLang));
   }
-});
+}
+
+captureSelectionBtn.addEventListener("click", () => void captureSelection());
 
 chrome.runtime.onMessage.addListener((message: RuntimeMessage) => {
   if (message.type === "SELECTION_CANCELLED") {
     if (awaitingRect) {
       awaitingRect = null;
       setBusy(false, t("statusSelectionCancelled", uiLang));
+      void showIdleState();
     }
     return;
   }
@@ -228,6 +372,7 @@ async function handleRectResult(
   pendingReadingMode: ReadingMode
 ) {
   try {
+    setPanelState("processing");
     setBusy(true, t("statusCapturingScreenshot", uiLang));
     const tab = await getActiveTab();
     const screenshotDataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, { format: "png" });
@@ -246,6 +391,7 @@ async function handleRectResult(
     });
   } catch (err) {
     setBusy(false, errorMessage(err));
+    setPanelState("error", t("errorDescription", uiLang));
   }
 }
 
@@ -270,6 +416,8 @@ async function runInterpretation(req: InterpretationRequest) {
   ];
 
   resultEl.innerHTML = "";
+  hasCurrentResult = false;
+  setPanelState("loading");
   setBusy(true, t("statusGenerating", uiLang));
 
   let fullText = "";
@@ -278,11 +426,14 @@ async function runInterpretation(req: InterpretationRequest) {
     messages,
     {
       onToken: (delta) => {
+        if (panelState !== "result") setPanelState("result");
         fullText += delta;
         resultEl.innerHTML = renderMarkdownLite(fullText);
       },
       onDone: async (finalText) => {
         setBusy(false, t("statusDone", uiLang));
+        hasCurrentResult = true;
+        setPanelState("result");
         const conversation: ChatMessage[] = [...messages, { role: "assistant", content: finalText }];
         const entry: HistoryEntry = {
           id: crypto.randomUUID(),
@@ -297,7 +448,7 @@ async function runInterpretation(req: InterpretationRequest) {
         };
         entry.title = generateHistoryTitle(entry);
         await addHistoryEntry(entry);
-        renderHistory();
+        await renderHistory();
         // Enable the follow-up chat box for this freshly generated result.
         currentConversation = conversation;
         currentHistoryId = entry.id;
@@ -306,6 +457,7 @@ async function runInterpretation(req: InterpretationRequest) {
       },
       onError: (err) => {
         setBusy(false, `${t("statusError", uiLang)}${err.message}`);
+        setPanelState("error", t("errorDescription", uiLang));
       },
     }
   );
@@ -460,7 +612,11 @@ async function renderHistory() {
   for (const entry of history) {
     const li = document.createElement("li");
     li.className = "history-item";
-    const date = new Date(entry.createdAt).toLocaleString();
+    const date = new Date(entry.createdAt).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
     const displayTitle = resolveHistoryTitle(entry, entry.sourceTitle || entry.inputPreview);
     li.innerHTML = `
       <div class="item-toolbar">
@@ -483,11 +639,17 @@ async function renderHistory() {
       if (currentHistoryId === entry.id) {
         resultEl.innerHTML = "";
         resetChat();
+        hasCurrentResult = false;
       }
-      renderHistory();
+      await renderHistory();
+      if (!hasCurrentResult) {
+        setPanelState((await getHistory()).length > 0 ? "recognized" : "empty");
+      }
     });
     li.addEventListener("click", () => {
       resultEl.innerHTML = renderMarkdownLite(entry.resultText);
+      hasCurrentResult = true;
+      setPanelState("result");
       // Restore this entry's conversation (if any) so the user can continue
       // discussing a past result. Entries saved before this feature existed
       // won't have `conversation` — just hide the chat box for those.
@@ -502,6 +664,12 @@ async function renderHistory() {
     });
     historyListEl.appendChild(li);
   }
+
+  historySectionEl.hidden = history.length === 0 || (panelState !== "recognized" && panelState !== "result");
+  if (!hasCurrentResult && !busy && (panelState === "recognized" || panelState === "empty")) {
+    setPanelState(history.length > 0 ? "recognized" : "empty");
+    historySectionEl.hidden = history.length === 0;
+  }
 }
 
 function modeLabel(mode: CaptureMode): string {
@@ -514,4 +682,7 @@ function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+updateCaptureControls();
+setPanelState("empty");
+void renderActiveSite();
 void renderHistory();
