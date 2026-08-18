@@ -3,7 +3,8 @@
 Internal-only Manifest V3 Chrome/Edge extension. Captures the current webpage
 (full page or a user selection) during online training and sends it to a
 company-internal OpenAI-compatible LLM gateway for a structured explanation,
-or a "self-practice quiz answer" mode. Not published to any store.
+or, when enabled in settings, a "self-practice quiz answer" mode. Not
+published to any store.
 
 ## Build / typecheck
 
@@ -51,17 +52,18 @@ there is no shared bundle/runtime between them:
   `chrome.tabs.captureVisibleTab`, calling the LLM, rendering, history) lives
   in `sidepanel/index.ts`, not in the background worker.
 - `src/options/` — settings page (gateway URL / API key / model / output
-  language / UI language / theme / test-connection button).
+  language / Quiz answers visibility / UI language / theme / test-connection
+  button).
 
 Shared code lives in `src/lib/` and is imported by any of the four entry
-points as needed: `types.ts` (shared `Settings`/message types — the
-`RuntimeMessage` union is the single source of truth for messages passed
-between content script ↔ side panel), `storage.ts` (chrome.storage.local
-wrappers for settings/history), `llmClient.ts` (streaming SSE chat-completion
-client + `testConnection`), `prompts.ts` (system/user prompt builders),
-`imageCrop.ts` (canvas crop of a full screenshot down to the selected rect),
-`permissions.ts` (`ensureHostAccess()`), `i18n.ts` + `uiPrefs.ts` (UI
-language/theme).
+points as needed: `types.ts` (shared `Settings`/message types — including
+`showQuizAssistant`; the `RuntimeMessage` union is the single source of truth
+for messages passed between content script ↔ side panel), `storage.ts`
+(chrome.storage.local wrappers for settings/history), `llmClient.ts`
+(streaming SSE chat-completion client + `testConnection`), `prompts.ts`
+(system/user prompt builders), `imageCrop.ts` (canvas crop of a full
+screenshot down to the selected rect), `permissions.ts`
+(`ensureHostAccess()`), `i18n.ts` + `uiPrefs.ts` (UI language/theme).
 
 ### Capture flow (screenshot / region selection)
 
@@ -109,6 +111,14 @@ This is the most non-obvious flow — it spans 3 files:
   is instructed to answer in. Don't conflate the two when adding strings —
   new user-facing UI text needs a key in both the `zh` and `en` dicts in
   `lib/i18n.ts` plus a `data-i18n*` attribute, not a hardcoded string.
+- **Quiz answers visibility is a settings concern.** `Settings.showQuizAssistant`
+  defaults to `false`, so new installations hide the Quiz answers mode. The
+  options page persists the toggle to `chrome.storage.local`; the side panel
+  listens for storage changes and updates visibility without requiring a reopen.
+  If the mode is disabled while active, the side panel falls back to explain
+  mode. `selectionMode` is independent from `readingMode`, so text selection
+  and screenshot selection remain shared when switching between explain and
+  Quiz answers.
 - **Theming uses CSS custom properties** (`--primary`, `--bg`, `--card`,
   `--border`, `--text`, `--muted`, etc.) redefined under
   `:root[data-theme="dark"]` in both `sidepanel.css` and `options.css`.
@@ -141,7 +151,7 @@ This repository contains a Chrome/Edge browser extension featuring a side panel 
 - **Content Scripts**: Preserve existing content script behavior and injection scope.
 - **Messaging**: Use the existing message-passing protocol for background/sidebar communication.
 - **Separation of Concerns**: Do not move business logic into the UI layer.
-- **Directory Structure**: Keep sidebar-specific code within `src/sidebar` whenever possible.
+- **Directory Structure**: Keep sidebar-specific code within `src/sidepanel` whenever possible.
 
 ## 🎨 UI & Layout Requirements
 
