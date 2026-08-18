@@ -10,6 +10,7 @@ export interface Settings {
   outputLanguage: string; // e.g. "中文", "English", ... (language of the AI's answers)
   uiLanguage: UILanguage; // language of the extension's own interface
   theme: UITheme; // light / dark UI theme
+  showQuizAssistant: boolean; // whether the Quiz answers mode is visible in the side panel
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -19,6 +20,7 @@ export const DEFAULT_SETTINGS: Settings = {
   outputLanguage: "中文",
   uiLanguage: "zh",
   theme: "light",
+  showQuizAssistant: false,
 };
 
 export type CaptureMode = "full-page" | "selection-text" | "selection-image";

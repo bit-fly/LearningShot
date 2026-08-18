@@ -1,137 +1,370 @@
-body {
-  margin: 0;
-  font-family: -apple-system, "Segoe UI", "Microsoft Yahei", sans-serif;
-  background: var(--bg);
-  color: var(--text);
-}
-
 :root {
-  --primary: #4f7cff;
-  --bg: #f7f8fb;
+  color-scheme: light;
+  --primary: #0a84ff;
+  --primary-strong: #0877e8;
+  --bg: #e5e6ea;
   --card: #ffffff;
-  --border: #e3e6ec;
-  --text: #1f2430;
-  --muted: #6b7280;
-  --success: #2e9e5b;
-  --danger: #d9463f;
+  --surface: #f2f3f6;
+  --border: #dedfe4;
+  --text: #202124;
+  --muted: #8b8e96;
+  --success: #27b966;
+  --danger: #ff4b4f;
+  --danger-bg: #f4dcdd;
+  --hint-bg: #fff3d8;
+  --hint-text: #8f640d;
+  --hint-border: #f2c96d;
+  --shadow: 0 1px 2px rgb(24 30 40 / 8%);
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --primary: #7b9bff;
-  --bg: #14161c;
-  --card: #1d212b;
-  --border: #2c313c;
-  --text: #e7e9ef;
-  --muted: #9aa1ad;
-  --success: #4bcd85;
-  --danger: #ff6b62;
+  --primary: #0a84ff;
+  --primary-strong: #2c96ff;
+  --bg: #1c1c1f;
+  --card: #29292d;
+  --surface: #353539;
+  --border: #49494f;
+  --text: #f4f4f5;
+  --muted: #a4a4aa;
+  --success: #42d17b;
+  --danger: #ff6e70;
+  --danger-bg: #493236;
+  --hint-bg: #3d351f;
+  --hint-text: #f0cf7a;
+  --hint-border: #745d25;
+  --shadow: 0 1px 2px rgb(0 0 0 / 24%);
 }
 
-.container {
-  max-width: 480px;
-  margin: 32px auto;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 24px;
+* {
+  box-sizing: border-box;
 }
 
-.title-row {
+html,
+body {
+  min-width: 320px;
+  min-height: 100%;
+}
+
+body {
   display: flex;
+  justify-content: center;
+  min-height: 100vh;
+  margin: 0;
+  overflow-x: hidden;
+  background: #d7d8dc;
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft Yahei", sans-serif;
+  font-size: 13px;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.options-shell {
+  display: flex;
+  width: min(100%, 440px);
+  min-height: 100vh;
+  flex-direction: column;
+  background: var(--bg);
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  min-height: 66px;
   align-items: center;
-  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+}
+
+.back-btn {
+  display: grid;
+  width: 22px;
+  height: 34px;
+  flex: 0 0 22px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--primary);
+  cursor: pointer;
+  font-size: 29px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.brand {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-mark {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  place-items: center;
+  color: var(--primary);
+  filter: drop-shadow(0 3px 5px rgb(10 132 255 / 20%));
+}
+
+.brand-mark svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.brand-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.brand-copy h1 {
+  margin: 0;
+  overflow: hidden;
+  font-size: 16px;
+  font-weight: 750;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.brand-copy span {
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.15;
 }
 
 .header-actions {
   display: flex;
-  gap: 4px;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 5px;
 }
 
 .icon-btn {
+  display: inline-grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  padding: 0;
   border: 1px solid var(--border);
-  background: transparent;
+  border-radius: 10px;
+  background: var(--surface);
   color: var(--text);
   cursor: pointer;
-  font-size: 12px;
-  padding: 3px 7px;
-  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 650;
 }
 
-h1 {
-  font-size: 18px;
-  margin-top: 0;
+.back-btn:focus-visible,
+.icon-btn:focus-visible,
+.save-btn:focus-visible,
+.test-btn:focus-visible,
+input:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--primary) 72%, transparent);
+  outline-offset: 2px;
+}
+
+.icon-btn:hover {
+  border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+  background: color-mix(in srgb, var(--primary) 8%, var(--surface));
+}
+
+.settings-content {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 16px 24px;
 }
 
 label {
-  display: block;
-  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
   color: var(--muted);
-  margin-bottom: 14px;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 input {
-  display: block;
   width: 100%;
-  margin-top: 6px;
-  padding: 8px 10px;
+  min-height: 38px;
+  padding: 8px 11px;
   border: 1px solid var(--border);
-  border-radius: 6px;
-  font-size: 13px;
-  box-sizing: border-box;
+  border-radius: 9px;
+  outline: none;
   background: var(--card);
   color: var(--text);
+  font-size: 13px;
+}
+
+input:focus {
+  border-color: var(--primary);
+}
+
+input::placeholder {
+  color: color-mix(in srgb, var(--muted) 72%, transparent);
+}
+
+.setting-toggle-row {
+  display: flex;
+  min-height: 50px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--card) 72%, var(--surface));
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.switch {
+  position: relative;
+  display: inline-flex;
+  width: 42px;
+  height: 24px;
+  flex: 0 0 42px;
+  cursor: pointer;
+}
+
+.switch input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.switch-track {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted) 55%, var(--surface));
+  transition: background 160ms ease;
+}
+
+.switch-track::after {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 22%);
+  content: "";
+  transition: transform 160ms ease;
+}
+
+.switch input:checked + .switch-track {
+  background: var(--primary);
+}
+
+.switch input:checked + .switch-track::after {
+  transform: translateX(18px);
+}
+
+.switch input:focus-visible + .switch-track {
+  outline: 2px solid color-mix(in srgb, var(--primary) 72%, transparent);
+  outline-offset: 2px;
+}
+
+.hint {
+  margin: -2px 0 0;
+  padding: 9px 11px;
+  border: 1px solid var(--hint-border);
+  border-radius: 9px;
+  background: var(--hint-bg);
+  color: var(--hint-text);
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .button-row {
   display: flex;
-  gap: 10px;
+  gap: 9px;
+  margin-top: 2px;
+}
+
+.save-btn,
+.test-btn {
+  min-height: 36px;
+  padding: 8px 15px;
+  border-radius: 9px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .save-btn {
-  padding: 8px 18px;
+  border: 1px solid var(--primary);
   background: var(--primary);
   color: #fff;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 13px;
+}
+
+.save-btn:hover {
+  border-color: var(--primary-strong);
+  background: var(--primary-strong);
 }
 
 .test-btn {
-  padding: 8px 18px;
-  background: transparent;
-  color: var(--primary);
-  border: 1px solid var(--primary);
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 13px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.test-btn:hover {
+  border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
 }
 
 .test-btn:disabled {
-  opacity: 0.6;
+  opacity: 0.55;
   cursor: not-allowed;
 }
 
 .saved-hint {
-  display: inline-block;
-  margin-left: 10px;
+  margin: -5px 0 0;
   color: var(--success);
-  font-size: 13px;
+  font-size: 12px;
 }
 
-/* The .saved-hint class's `display: inline-block` would otherwise override
-   the browser's default `[hidden] { display: none }` UA rule (author
-   stylesheets win over UA styles at equal specificity), making the "已保存"
-   hint visible even while the `hidden` attribute is set. This rule restores
-   the expected hidden behavior. */
 .saved-hint[hidden] {
   display: none;
 }
 
 .test-result {
-  margin: 8px 0 0;
-  font-size: 12.5px;
+  margin: -5px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .test-result.ok {
@@ -147,14 +380,48 @@ input {
 }
 
 .note {
+  margin: 1px 0 0;
+  color: color-mix(in srgb, var(--muted) 78%, transparent);
   font-size: 12px;
-  color: var(--muted);
   line-height: 1.6;
 }
 
-.hint {
-  font-size: 12px;
+.settings-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  min-height: 35px;
+  flex: 0 0 35px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  border-top: 1px solid var(--border);
+  background: var(--card);
   color: var(--muted);
-  line-height: 1.5;
-  margin: -8px 0 14px;
+  font-size: 12px;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+@media (max-width: 440px) {
+  body {
+    background: var(--bg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }

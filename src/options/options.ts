@@ -9,14 +9,26 @@ const baseUrlInput = document.getElementById("baseUrl") as HTMLInputElement;
 const apiKeyInput = document.getElementById("apiKey") as HTMLInputElement;
 const modelInput = document.getElementById("model") as HTMLInputElement;
 const outputLanguageInput = document.getElementById("outputLanguage") as HTMLInputElement;
+const showQuizAssistantInput = document.getElementById("showQuizAssistant") as HTMLInputElement;
 const saveBtn = document.getElementById("save") as HTMLButtonElement;
 const savedHint = document.getElementById("savedHint") as HTMLElement;
 const testBtn = document.getElementById("testConnection") as HTMLButtonElement;
 const testResultEl = document.getElementById("testResult") as HTMLElement;
 const langToggleBtn = document.getElementById("langToggle") as HTMLButtonElement;
 const themeToggleBtn = document.getElementById("themeToggle") as HTMLButtonElement;
+const backToPanelBtn = document.getElementById("backToPanel") as HTMLButtonElement;
 
 let uiLang: UILanguage = "zh";
+
+backToPanelBtn.addEventListener("click", () => {
+  void chrome.sidePanel
+    .open({ windowId: chrome.windows.WINDOW_ID_CURRENT })
+    .then(() => window.close())
+    .catch((err: unknown) => {
+      console.error("无法返回侧边栏", err);
+      window.history.back();
+    });
+});
 
 async function load() {
   const settings = await getSettings();
@@ -24,6 +36,7 @@ async function load() {
   apiKeyInput.value = settings.apiKey;
   modelInput.value = settings.model;
   outputLanguageInput.value = settings.outputLanguage;
+  showQuizAssistantInput.checked = settings.showQuizAssistant;
 
   uiLang = settings.uiLanguage;
   applyStaticI18n(uiLang);
@@ -52,6 +65,7 @@ saveBtn.addEventListener("click", async () => {
     apiKey: apiKeyInput.value.trim(),
     model: modelInput.value.trim(),
     outputLanguage: outputLanguageInput.value.trim() || "中文",
+    showQuizAssistant: showQuizAssistantInput.checked,
   });
   savedHint.hidden = false;
   setTimeout(() => (savedHint.hidden = true), 1500);

@@ -7,75 +7,145 @@
   </head>
   <body>
     <header class="header">
-      <h1 data-i18n="appTitle">LearningShot 在线培训学习助手</h1>
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" focusable="false">
+            <rect x="1" y="1" width="30" height="30" rx="9" fill="currentColor" />
+            <path d="M10 11h12M10 16h8M10 21h5" stroke="#fff" stroke-width="2" stroke-linecap="round" />
+            <circle cx="22" cy="21" r="3" fill="#fff" />
+            <path d="M22 19.5v3M20.5 21h3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+          </svg>
+        </span>
+        <div class="brand-copy">
+          <h1 data-i18n="appTitle">LearningShot</h1>
+          <span data-i18n="appSubtitle">在线学习助手</span>
+        </div>
+      </div>
       <div class="header-actions">
         <button id="langToggle" class="icon-btn" data-i18n-title="langToggleTitle" title="Switch to English">EN</button>
         <button id="themeToggle" class="icon-btn" data-i18n-title="themeToggleTitle" title="切换深色/浅色主题">🌙</button>
-        <button id="openOptions" class="icon-btn" title="设置">⚙️</button>
+        <button id="openOptions" class="icon-btn" data-i18n-title="settingsTitle" title="设置" aria-label="设置">
+          <svg class="settings-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path
+              fill="#111"
+              d="M19.43 12.98c.04-.32.07-.65.07-.98s-.02-.66-.07-.98l2.11-1.65a.5.5 0 0 0 .12-.64l-2-3.46a.5.5 0 0 0-.61-.22l-2.49 1a7.35 7.35 0 0 0-1.69-.98L14.5 2.42A.49.49 0 0 0 14.01 2h-4a.49.49 0 0 0-.49.42L9.14 5.07c-.6.25-1.16.58-1.69.98l-2.49-1a.5.5 0 0 0-.61.22l-2 3.46a.5.5 0 0 0 .12.64l2.11 1.65c-.04.32-.08.65-.08.98s.03.66.08.98l-2.11 1.65a.5.5 0 0 0-.12.64l2 3.46c.12.21.37.3.61.22l2.49-1c.53.4 1.09.73 1.69.98l.38 2.65c.04.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.6-.25 1.16-.58 1.69-.98l2.49 1c.23.08.49-.01.61-.22l2-3.46a.5.5 0 0 0-.12-.64l-2.11-1.65ZM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5Z"
+            />
+          </svg>
+        </button>
       </div>
     </header>
 
-    <section class="controls">
-      <div class="mode-row">
-        <span class="mode-label" data-i18n="readingModeLabel">解读模式</span>
-        <div class="segmented" id="readingModeSegmented">
-          <button data-value="explain" class="segmented-btn active" data-i18n="modeExplain">普通解读</button>
-          <button data-value="quiz" class="segmented-btn" data-i18n="modeQuiz">题目解答</button>
+    <main class="panel-content">
+      <section class="controls">
+        <div class="control-card mode-card">
+          <div class="mode-row reading-mode-row">
+            <span class="mode-label" data-i18n="readingModeLabel">阅读模式</span>
+            <div class="segmented reading-mode-segmented" id="readingModeSegmented" role="group" aria-label="阅读模式">
+              <button data-value="explain" class="segmented-btn active" data-i18n="modeExplain">解释</button>
+              <button id="quizModeButton" data-value="quiz" class="segmented-btn" data-i18n="modeQuiz">自测</button>
+            </div>
+          </div>
+          <p class="hint" id="quizHint" data-i18n="quizHint" hidden>
+            ⚠️ 仅供自测/练习参考，请勿用于正式计分考试。
+          </p>
+
+          <div class="mode-row selection-mode-row">
+            <span class="mode-label" data-i18n="selectionModeLabel">选取模式</span>
+            <div class="segmented" id="selectionModeSegmented" role="group" aria-label="选取模式">
+              <button data-value="selection-text" class="segmented-btn active" data-i18n="selectionText">文本选取</button>
+              <button data-value="selection-image" class="segmented-btn" data-i18n="selectionImage">截图选取</button>
+            </div>
+          </div>
         </div>
-      </div>
-      <p class="hint" id="quizHint" data-i18n="quizHint" hidden>
-        ⚠️ 仅供自测/练习参考，请勿用于正式计分考试。
-      </p>
 
-      <div class="mode-row">
-        <span class="mode-label" data-i18n="selectionModeLabel">框选方式</span>
-        <div class="segmented" id="selectionModeSegmented">
-          <button data-value="selection-text" class="segmented-btn active" data-i18n="selectionText">文本选中</button>
-          <button data-value="selection-image" class="segmented-btn" data-i18n="selectionImage">区域截图</button>
+        <div class="control-card capture-card">
+          <div id="captureScope" class="capture-scope" role="radiogroup" aria-label="捕获范围">
+            <label class="radio-option">
+              <input id="captureScopeFullPage" type="radio" name="captureScope" value="full-page" checked />
+              <span data-i18n="captureFullPageOption">捕获整页</span>
+            </label>
+            <label class="radio-option">
+              <input id="captureScopeSelection" type="radio" name="captureScope" value="selection" />
+              <span data-i18n="captureSelectionOption">捕获选区</span>
+            </label>
+          </div>
+          <div class="action-row">
+            <button id="captureFullPage" class="primary-btn" type="button">
+              <span class="button-icon" aria-hidden="true">▤</span>
+              <span id="captureFullPageLabel">捕获文字</span>
+            </button>
+            <button id="captureSelection" class="primary-btn" type="button" hidden>
+              <span class="button-icon" aria-hidden="true">▤</span>
+              <span id="captureSelectionLabel">捕获文字</span>
+            </button>
+          </div>
         </div>
-      </div>
+      </section>
 
-      <div class="action-row">
-        <button id="captureFullPage" class="primary-btn" data-i18n="captureFullPage">📄 抓取整页</button>
-        <button id="captureSelection" class="secondary-btn" data-i18n="captureSelection">✂️ 框选解读</button>
-      </div>
-      <p class="status" id="status"></p>
-    </section>
-
-    <section class="result-section">
-      <div class="result-toolbar">
-        <h2 data-i18n="resultTitle">解读结果</h2>
-        <button id="clearResult" class="text-btn" data-i18n="clearResult">清空</button>
-      </div>
-      <div id="result" class="result-box"></div>
-
-      <div id="chatSection" class="chat-section" hidden>
-        <h3 data-i18n="chatTitle">继续讨论</h3>
-        <div id="chatMessages" class="chat-messages"></div>
-        <div class="chat-input-row">
-          <textarea
-            id="chatInput"
-            class="chat-input"
-            rows="2"
-            data-i18n-placeholder="chatPlaceholder"
-            placeholder="针对以上解读结果继续提问…"
-          ></textarea>
-          <button id="chatSend" class="primary-btn" data-i18n="chatSend">发送</button>
+      <section id="resultSection" class="result-section">
+        <div id="processingState" class="processing-state" hidden aria-live="polite">
+          <span class="spinner" aria-hidden="true"></span>
+          <strong data-i18n="processingTitle">正在分析…</strong>
+          <span data-i18n="processingDescription">AI 正在处理内容，请稍候。</span>
         </div>
-      </div>
-    </section>
-
-    <section class="history-section">
-      <div class="result-toolbar">
-        <h2 data-i18n="historyTitle">历史记录</h2>
-        <div class="history-toolbar-actions">
-          <button id="exportAllHistory" class="text-btn" data-i18n="exportAll">导出全部</button>
-          <button id="clearHistory" class="text-btn" data-i18n="clearHistoryAll">全部清空</button>
+        <div id="loadingState" class="loading-state" hidden aria-live="polite">
+          <div class="skeleton-card">
+            <span></span><span></span><span></span><span></span><span class="short"></span>
+          </div>
+          <div class="skeleton-card">
+            <span></span><span></span><span></span><span></span><span class="short"></span>
+          </div>
         </div>
-      </div>
-      <ul id="historyList" class="history-list"></ul>
-    </section>
+        <div id="errorState" class="error-state" hidden role="alert">
+          <div class="state-icon error-icon" aria-hidden="true">△</div>
+          <strong data-i18n="errorTitle">请求失败</strong>
+          <span id="errorDetail" data-i18n="errorDescription">连接 AI 服务时出错，请检查设置后重试。</span>
+          <button id="retryCapture" class="retry-btn" type="button" data-i18n="retry">重试</button>
+        </div>
+        <div id="emptyState" class="empty-state" hidden>
+          <div class="empty-icon" aria-hidden="true">＋</div>
+          <strong data-i18n="emptyTitle">暂无结果</strong>
+          <span data-i18n="emptyDescription">捕获页面或选中文本，开始分析。</span>
+        </div>
+        <div id="resultToolbar" class="result-toolbar" hidden>
+          <h2 data-i18n="resultTitle">结果</h2>
+          <button id="clearResult" class="text-btn" type="button" data-i18n="clearResult">清除</button>
+        </div>
+        <div id="result" class="result-box" hidden></div>
 
+        <div id="chatSection" class="chat-section" hidden>
+          <h3 data-i18n="chatTitle">继续讨论</h3>
+          <div id="chatMessages" class="chat-messages"></div>
+          <div class="chat-input-row">
+            <textarea
+              id="chatInput"
+              class="chat-input"
+              rows="2"
+              data-i18n-placeholder="chatPlaceholder"
+              placeholder="针对以上解读结果继续提问…"
+            ></textarea>
+            <button id="chatSend" class="primary-btn" type="button" data-i18n="chatSend">发送</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="historySection" class="history-section" hidden>
+        <div class="result-toolbar">
+          <h2 data-i18n="historyTitle">历史</h2>
+          <div class="history-toolbar-actions">
+            <button id="exportAllHistory" class="text-btn" type="button" data-i18n="exportAll">全部导出</button>
+            <button id="clearHistory" class="text-btn danger-text" type="button" data-i18n="clearHistoryAll">全部清除</button>
+          </div>
+        </div>
+        <ul id="historyList" class="history-list"></ul>
+      </section>
+    </main>
+
+    <footer class="app-status">
+      <span id="statusDot" class="status-dot status-ready" aria-hidden="true"></span>
+      <span id="status" role="status" aria-live="polite" data-i18n="statusReady">就绪</span>
+      <span id="siteOrigin" class="site-origin" aria-hidden="true"></span>
+    </footer>
     <script type="module" src="sidepanel.js"></script>
   </body>
 </html>
