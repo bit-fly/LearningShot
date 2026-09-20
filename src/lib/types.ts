@@ -35,6 +35,10 @@ export type ChatContentPart =
   | { type: "text"; text: string }
   | { type: "image_url"; image_url: { url: string } };
 
+export const ATTACHMENT_CONTEXT_START = "\n\n[LearningShot attachments]\n";
+export const ATTACHMENT_CONTEXT_END = "\n[End LearningShot attachments]";
+export const ATTACHMENT_HISTORY_PLACEHOLDER = "[附件原文仅在当前会话中使用，未保存到历史记录。]";
+
 export interface ChatMessage {
   role: "system" | "user" | "assistant";
   content: string | ChatContentPart[];
@@ -73,8 +77,10 @@ export interface HistoryEntry {
   // compatibility with entries saved before this field existed.
   title?: string;
   // Full conversation so far (system + user + assistant, including any
-  // follow-up chat turns). Optional for backward compatibility with entries
-  // saved before the follow-up chat feature existed.
+  // follow-up chat turns). Screenshot image payloads are kept only in the
+  // active in-memory conversation and replaced with a text note when saved.
+  // Optional for backward compatibility with entries saved before the
+  // follow-up chat feature existed.
   conversation?: ChatMessage[];
 }
 

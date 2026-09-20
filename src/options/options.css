@@ -402,6 +402,23 @@ input::placeholder {
   font-size: 12px;
 }
 
+.settings-footer-label {
+  flex: 0 0 auto;
+}
+
+.settings-meta {
+  display: inline-flex;
+  min-width: 0;
+  margin-left: auto;
+  align-items: center;
+  gap: 3px;
+  overflow: hidden;
+  color: color-mix(in srgb, var(--muted) 88%, transparent);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .status-dot {
   width: 7px;
   height: 7px;

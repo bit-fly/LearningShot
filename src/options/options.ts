@@ -17,6 +17,7 @@ const testResultEl = document.getElementById("testResult") as HTMLElement;
 const langToggleBtn = document.getElementById("langToggle") as HTMLButtonElement;
 const themeToggleBtn = document.getElementById("themeToggle") as HTMLButtonElement;
 const backToPanelBtn = document.getElementById("backToPanel") as HTMLButtonElement;
+const versionValueEl = document.getElementById("versionValue")!;
 
 let uiLang: UILanguage = "zh";
 
@@ -32,6 +33,7 @@ backToPanelBtn.addEventListener("click", () => {
 
 async function load() {
   const settings = await getSettings();
+  versionValueEl.textContent = chrome.runtime.getManifest().version;
   baseUrlInput.value = settings.baseUrl;
   apiKeyInput.value = settings.apiKey;
   modelInput.value = settings.model;
