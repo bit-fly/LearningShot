@@ -1,6 +1,16 @@
 // Thin wrappers around chrome.storage.local for settings and history.
 
-import { DEFAULT_SETTINGS, HISTORY_LIMIT, HistoryEntry, Settings } from "./types";
+import {
+  ATTACHMENT_CONTEXT_END,
+  ATTACHMENT_CONTEXT_START,
+  ATTACHMENT_HISTORY_PLACEHOLDER,
+  ChatContentPart,
+  ChatMessage,
+  DEFAULT_SETTINGS,
+  HISTORY_LIMIT,
+  HistoryEntry,
+  Settings,
+} from "./types";
 
 const SETTINGS_KEY = "settings";
 const HISTORY_KEY = "history";
@@ -16,12 +26,13 @@ export async function saveSettings(settings: Settings): Promise<void> {
 
 export async function getHistory(): Promise<HistoryEntry[]> {
   const stored = await chrome.storage.local.get(HISTORY_KEY);
-  return (stored[HISTORY_KEY] as HistoryEntry[] | undefined) ?? [];
+  const history = (stored[HISTORY_KEY] as HistoryEntry[] | undefined) ?? [];
+  return history.map(sanitizeHistoryEntry);
 }
 
 export async function addHistoryEntry(entry: HistoryEntry): Promise<void> {
   const history = await getHistory();
-  history.unshift(entry);
+  history.unshift(sanitizeHistoryEntry(entry));
   if (history.length > HISTORY_LIMIT) {
     history.length = HISTORY_LIMIT;
   }
@@ -44,6 +55,51 @@ export async function updateHistoryEntry(id: string, patch: Partial<HistoryEntry
   const history = await getHistory();
   const idx = history.findIndex((h) => h.id === id);
   if (idx === -1) return;
-  history[idx] = { ...history[idx], ...patch };
+  history[idx] = sanitizeHistoryEntry({ ...history[idx], ...patch });
   await chrome.storage.local.set({ [HISTORY_KEY]: history });
+}
+
+function sanitizeHistoryEntry(entry: HistoryEntry): HistoryEntry {
+  if (!entry.conversation) return entry;
+  return {
+    ...entry,
+    conversation: sanitizeConversationForHistory(entry.conversation),
+  };
+}
+
+function sanitizeConversationForHistory(conversation: ChatMessage[]): ChatMessage[] {
+  return conversation.map((message) => {
+    if (typeof message.content === "string") {
+      const content = stripAttachmentContext(message.content);
+      return content === message.content ? message : { ...message, content };
+    }
+
+    const hasImage = message.content.some((part) => part.type === "image_url");
+    let changed = hasImage;
+    const textParts: ChatContentPart[] = [];
+    for (const part of message.content) {
+      if (part.type === "text") {
+        const text = stripAttachmentContext(part.text);
+        changed ||= text !== part.text;
+        textParts.push({ type: "text", text });
+      }
+    }
+    if (hasImage) {
+      textParts.push({
+        type: "text",
+        text: "[原始截图未保存到历史记录，请基于已保存的解读内容回答后续问题。]",
+      });
+    }
+    return changed ? { ...message, content: textParts } : message;
+  });
+}
+
+function stripAttachmentContext(text: string): string {
+  const start = text.indexOf(ATTACHMENT_CONTEXT_START);
+  if (start === -1) return text;
+
+  const end = text.indexOf(ATTACHMENT_CONTEXT_END, start + ATTACHMENT_CONTEXT_START.length);
+  const before = text.slice(0, start).trimEnd();
+  const after = end === -1 ? "" : text.slice(end + ATTACHMENT_CONTEXT_END.length).trimStart();
+  return [before, ATTACHMENT_HISTORY_PLACEHOLDER, after].filter(Boolean).join("\n\n");
 }

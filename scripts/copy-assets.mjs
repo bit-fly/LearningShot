@@ -15,5 +15,9 @@ await copy(path.join(root, "src", "sidepanel", "sidepanel.css"), path.join(dist,
 await copy(path.join(root, "src", "options", "index.html"), path.join(dist, "options.html"));
 await copy(path.join(root, "src", "options", "options.css"), path.join(dist, "options.css"));
 await copy(path.join(root, "public", "icons"), path.join(dist, "icons"));
+await copy(
+  path.join(root, "node_modules", "pdfjs-dist", "build", "pdf.worker.min.mjs"),
+  path.join(dist, "pdf.worker.min.mjs")
+);
 
 console.log("Assets copied to dist/");

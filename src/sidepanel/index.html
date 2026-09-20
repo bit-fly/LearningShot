@@ -116,6 +116,7 @@
         <div id="chatSection" class="chat-section" hidden>
           <h3 data-i18n="chatTitle">继续讨论</h3>
           <div id="chatMessages" class="chat-messages"></div>
+          <div id="chatAttachments" class="chat-attachments" hidden></div>
           <div class="chat-input-row">
             <textarea
               id="chatInput"
@@ -124,6 +125,23 @@
               data-i18n-placeholder="chatPlaceholder"
               placeholder="针对以上解读结果继续提问…"
             ></textarea>
+            <input
+              id="chatAttachmentInput"
+              type="file"
+              multiple
+              hidden
+              accept=".txt,.md,.csv,.json,.html,.htm,.xml,.pdf,.docx,text/plain,text/markdown,text/csv,application/json,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            />
+            <button
+              id="chatAttach"
+              class="chat-attach-btn"
+              type="button"
+              aria-label="添加附件 / Add attachment"
+              data-i18n-title="chatAttachTitle"
+              title="添加附件"
+            >
+              📎
+            </button>
             <button id="chatSend" class="primary-btn" type="button" data-i18n="chatSend">发送</button>
           </div>
         </div>

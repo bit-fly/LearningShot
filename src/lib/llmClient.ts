@@ -6,7 +6,7 @@ import { ChatMessage, Settings } from "./types";
 
 export interface StreamCallbacks {
   onToken: (delta: string) => void;
-  onDone: (fullText: string) => void;
+  onDone: (fullText: string) => void | Promise<void>;
   onError: (error: Error) => void;
 }
 
@@ -112,7 +112,7 @@ export async function streamChatCompletion(
       const json = await response.json();
       const text = json?.choices?.[0]?.message?.content ?? "";
       callbacks.onToken(text);
-      callbacks.onDone(text);
+      await callbacks.onDone(text);
     } catch (err) {
       callbacks.onError(err instanceof Error ? err : new Error(String(err)));
     }
@@ -138,7 +138,7 @@ export async function streamChatCompletion(
         if (!trimmed || !trimmed.startsWith("data:")) continue;
         const data = trimmed.slice(5).trim();
         if (data === "[DONE]") {
-          callbacks.onDone(fullText);
+          await callbacks.onDone(fullText);
           return;
         }
         try {
@@ -153,7 +153,7 @@ export async function streamChatCompletion(
         }
       }
     }
-    callbacks.onDone(fullText);
+    await callbacks.onDone(fullText);
   } catch (err) {
     callbacks.onError(err instanceof Error ? err : new Error(String(err)));
   }

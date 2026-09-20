@@ -7,7 +7,23 @@ import { applyStaticI18n, t } from "../lib/i18n";
 import { applyTheme, langToggleLabel, themeToggleIcon, toggleTheme, toggleUILanguage } from "../lib/uiPrefs";
 import { exportAllHistory, exportSingleEntry } from "../lib/exportHistory";
 import { generateHistoryTitle, resolveHistoryTitle } from "../lib/titleUtil";
-import { CaptureMode, ChatMessage, HistoryEntry, ReadingMode, RuntimeMessage, UILanguage } from "../lib/types";
+import {
+  buildAttachmentPrompt,
+  DocumentAttachmentError,
+  formatAttachmentNames,
+  MAX_ATTACHMENTS,
+  MAX_ATTACHMENT_TEXT_CHARS,
+  parseDocumentAttachment,
+  ParsedDocumentAttachment,
+} from "../lib/documentAttachments";
+import {
+  CaptureMode,
+  ChatMessage,
+  HistoryEntry,
+  ReadingMode,
+  RuntimeMessage,
+  UILanguage,
+} from "../lib/types";
 
 const readingModeSegmented = document.getElementById("readingModeSegmented")!;
 const quizModeBtn = document.getElementById("quizModeButton") as HTMLButtonElement;
@@ -42,7 +58,10 @@ const langToggleBtn = document.getElementById("langToggle") as HTMLButtonElement
 const themeToggleBtn = document.getElementById("themeToggle") as HTMLButtonElement;
 const chatSectionEl = document.getElementById("chatSection")!;
 const chatMessagesEl = document.getElementById("chatMessages")!;
+const chatAttachmentsEl = document.getElementById("chatAttachments")!;
 const chatInputEl = document.getElementById("chatInput") as HTMLTextAreaElement;
+const chatAttachmentInputEl = document.getElementById("chatAttachmentInput") as HTMLInputElement;
+const chatAttachBtn = document.getElementById("chatAttach") as HTMLButtonElement;
 const chatSendBtn = document.getElementById("chatSend") as HTMLButtonElement;
 
 let readingMode: ReadingMode = "explain";
@@ -50,6 +69,7 @@ let selectionMode: "selection-text" | "selection-image" = "selection-text";
 let captureScope: "full-page" | "selection" = "full-page";
 let busy = false;
 let chatBusy = false;
+let attachmentsBusy = false;
 let panelState: "recognized" | "processing" | "loading" | "result" | "empty" | "error" = "empty";
 let hasCurrentResult = false;
 let awaitingRect: { readingMode: ReadingMode } | null = null;
@@ -59,6 +79,7 @@ let uiLang: UILanguage = "zh";
 // follow-up questions with full context. Mirrors HistoryEntry.conversation.
 let currentConversation: ChatMessage[] | null = null;
 let currentHistoryId: string | null = null;
+let pendingAttachments: ParsedDocumentAttachment[] = [];
 
 openOptionsBtn.addEventListener("click", () => chrome.runtime.openOptionsPage());
 
@@ -89,6 +110,7 @@ langToggleBtn.addEventListener("click", async () => {
   langToggleBtn.textContent = langToggleLabel(uiLang);
   updateCaptureControls();
   updateStatusLabel();
+  renderPendingAttachments();
   await renderHistory();
 });
 
@@ -212,11 +234,117 @@ function resetChat() {
   currentHistoryId = null;
   chatMessagesEl.innerHTML = "";
   chatInputEl.value = "";
+  clearPendingAttachments();
   chatSectionEl.hidden = true;
 }
 
 function showChat() {
   chatSectionEl.hidden = false;
+}
+
+function clearPendingAttachments() {
+  pendingAttachments = [];
+  chatAttachmentInputEl.value = "";
+  renderPendingAttachments();
+}
+
+function renderPendingAttachments() {
+  chatAttachmentsEl.innerHTML = "";
+  chatAttachmentsEl.hidden = pendingAttachments.length === 0;
+
+  pendingAttachments.forEach((attachment, index) => {
+    const item = document.createElement("div");
+    item.className = "chat-attachment";
+
+    const name = document.createElement("span");
+    name.className = "chat-attachment-name";
+    name.textContent = attachment.name;
+    name.title = attachment.name;
+
+    const remove = document.createElement("button");
+    remove.className = "chat-attachment-remove";
+    remove.type = "button";
+    remove.textContent = "×";
+    remove.title = t("chatAttachmentRemoveTitle", uiLang);
+    remove.setAttribute("aria-label", t("chatAttachmentRemoveTitle", uiLang));
+    remove.addEventListener("click", () => {
+      pendingAttachments.splice(index, 1);
+      renderPendingAttachments();
+    });
+
+    item.append(name, remove);
+    chatAttachmentsEl.appendChild(item);
+  });
+}
+
+chatAttachBtn.addEventListener("click", () => {
+  if (!chatBusy && !attachmentsBusy) {
+    chatAttachmentInputEl.click();
+  }
+});
+
+chatAttachmentInputEl.addEventListener("change", () => void handleAttachmentInputChange());
+
+async function handleAttachmentInputChange() {
+  const files = Array.from(chatAttachmentInputEl.files ?? []);
+  chatAttachmentInputEl.value = "";
+  if (files.length === 0) return;
+
+  if (pendingAttachments.length + files.length > MAX_ATTACHMENTS) {
+    statusEl.textContent = t("chatAttachmentTooMany", uiLang);
+    return;
+  }
+
+  attachmentsBusy = true;
+  updateChatControls();
+  statusEl.textContent = t("chatAttachmentReading", uiLang);
+
+  const added: ParsedDocumentAttachment[] = [];
+  const errors: string[] = [];
+  let totalTextLength = pendingAttachments.reduce((total, attachment) => total + attachment.text.length, 0);
+
+  try {
+    for (const file of files) {
+      try {
+        const attachment = await parseDocumentAttachment(file);
+        if (totalTextLength + attachment.text.length > MAX_ATTACHMENT_TEXT_CHARS) {
+          errors.push(`${file.name}: ${t("chatAttachmentTextTooLong", uiLang)}`);
+          continue;
+        }
+        totalTextLength += attachment.text.length;
+        added.push(attachment);
+      } catch (err) {
+        errors.push(formatAttachmentError(file.name, err));
+      }
+    }
+
+    pendingAttachments.push(...added);
+    renderPendingAttachments();
+    if (errors.length > 0) {
+      statusEl.textContent = errors.join(" ");
+    } else if (added.length > 0) {
+      statusEl.textContent = t("chatAttachmentAdded", uiLang);
+    }
+  } finally {
+    attachmentsBusy = false;
+    updateChatControls();
+  }
+}
+
+function formatAttachmentError(fileName: string, err: unknown): string {
+  const key =
+    err instanceof DocumentAttachmentError
+      ? err.code === "too-large"
+        ? "chatAttachmentTooLarge"
+        : err.code === "unsupported"
+          ? "chatAttachmentUnsupported"
+          : err.code === "empty"
+            ? "chatAttachmentEmpty"
+            : err.code === "text-too-long"
+              ? "chatAttachmentTextTooLong"
+              : "chatAttachmentParseFailed"
+      : "chatAttachmentParseFailed";
+  return `${t(key, uiLang)}${fileName}`;
 }
 
 clearHistoryBtn.addEventListener("click", async () => {
@@ -447,13 +575,29 @@ async function runInterpretation(req: InterpretationRequest) {
           conversation,
         };
         entry.title = generateHistoryTitle(entry);
-        await addHistoryEntry(entry);
-        await renderHistory();
-        // Enable the follow-up chat box for this freshly generated result.
+
+        // Keep the original image in memory for immediate follow-up requests,
+        // but do not persist its Base64 payload in chrome.storage.local.
         currentConversation = conversation;
         currentHistoryId = entry.id;
         chatMessagesEl.innerHTML = "";
         showChat();
+
+        try {
+          await addHistoryEntry(entry);
+        } catch (err) {
+          currentHistoryId = null;
+          console.error("保存解读历史失败", err);
+          statusEl.textContent = t("statusHistoryStorageError", uiLang);
+          return;
+        }
+
+        try {
+          await renderHistory();
+        } catch (err) {
+          console.error("刷新解读历史失败", err);
+          statusEl.textContent = t("statusHistoryStorageError", uiLang);
+        }
       },
       onError: (err) => {
         setBusy(false, `${t("statusError", uiLang)}${err.message}`);
@@ -523,22 +667,36 @@ function appendChatBubble(role: "user" | "assistant", text: string): HTMLElement
 
 function setChatBusy(value: boolean) {
   chatBusy = value;
-  chatSendBtn.disabled = value;
-  chatInputEl.disabled = value;
+  updateChatControls();
+}
+
+function updateChatControls() {
+  chatSendBtn.disabled = chatBusy || attachmentsBusy;
+  chatAttachBtn.disabled = chatBusy || attachmentsBusy;
+  chatAttachmentInputEl.disabled = chatBusy || attachmentsBusy;
+  chatInputEl.disabled = chatBusy;
 }
 
 async function sendChatFollowUp() {
-  if (chatBusy || !currentConversation) return;
+  if (chatBusy || attachmentsBusy || !currentConversation) return;
   const question = chatInputEl.value.trim();
   if (!question) {
     statusEl.textContent = t("chatEmptyInput", uiLang);
     return;
   }
 
+  const attachmentsForTurn = [...pendingAttachments];
   const settings = await getSettings();
-  currentConversation.push({ role: "user", content: question });
+  const conversation = currentConversation;
+  const userContent =
+    attachmentsForTurn.length > 0 ? buildAttachmentPrompt(question, attachmentsForTurn) : question;
+  const displayQuestion =
+    attachmentsForTurn.length > 0
+      ? `${question}\n${t("chatAttachmentContext", uiLang)}${formatAttachmentNames(attachmentsForTurn)}`
+      : question;
+  conversation.push({ role: "user", content: userContent });
   chatInputEl.value = "";
-  appendChatBubble("user", question);
+  appendChatBubble("user", displayQuestion);
   const assistantBubble = appendChatBubble("assistant", "");
   const assistantBody = assistantBubble.querySelector(".chat-body") as HTMLElement;
   setChatBusy(true);
@@ -547,7 +705,7 @@ async function sendChatFollowUp() {
   let fullText = "";
   await streamChatCompletion(
     settings,
-    currentConversation,
+    conversation,
     {
       onToken: (delta) => {
         fullText += delta;
@@ -555,16 +713,25 @@ async function sendChatFollowUp() {
         chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
       },
       onDone: async (finalText) => {
-        currentConversation!.push({ role: "assistant", content: finalText });
+        conversation.push({ role: "assistant", content: finalText });
+        clearPendingAttachments();
         setChatBusy(false);
         statusEl.textContent = t("statusDone", uiLang);
         if (currentHistoryId) {
-          await updateHistoryEntry(currentHistoryId, { conversation: currentConversation! });
+          try {
+            await updateHistoryEntry(currentHistoryId, { conversation });
+          } catch (err) {
+            currentHistoryId = null;
+            console.error("保存追问历史失败", err);
+            statusEl.textContent = t("statusHistoryStorageError", uiLang);
+          }
         }
       },
       onError: (err) => {
         // Roll back the just-added user turn so retrying doesn't duplicate it.
-        currentConversation!.pop();
+        conversation.pop();
+        pendingAttachments = attachmentsForTurn;
+        renderPendingAttachments();
         setChatBusy(false);
         assistantBody.textContent = `${t("statusError", uiLang)}${err.message}`;
       },
@@ -647,6 +814,7 @@ async function renderHistory() {
       }
     });
     li.addEventListener("click", () => {
+      clearPendingAttachments();
       resultEl.innerHTML = renderMarkdownLite(entry.resultText);
       hasCurrentResult = true;
       setPanelState("result");
